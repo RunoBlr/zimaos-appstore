@@ -1,0 +1,78 @@
+name: Build and Deploy App Store
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Generate store.json
+        run: |
+          python - << 'EOF'
+          import os
+          import json
+          import yaml
+
+          apps_dir = "Apps"
+          store_data = {
+              "name": "My ZimaOS Store",
+              "version": "1.0.0",
+              "description": "Custom ZimaOS App Catalog",
+              "apps": []
+          }
+
+          if os.path.exists(apps_dir):
+              for app_name in sorted(os.listdir(apps_dir)):
+                  compose_file = os.path.join(apps_dir, app_name, "docker-compose.yml")
+                  if os.path.isfile(compose_file):
+                      with open(compose_file, "r", encoding="utf-8") as f:
+                          try:
+                              compose_yaml = yaml.safe_load(f)
+                              # CasaOS / ZimaOS ожидает строку сериализованного JSON внутри поля compose
+                              store_data["apps"].append({
+                                  "name": app_name,
+                                  "compose": json.dumps(compose_yaml, ensure_ascii=False)
+                              })
+                          except Exception as e:
+                              print(f"Error parsing {compose_file}: {e}")
+
+          os.makedirs("public", exist_ok=True)
+          with open("public/store.json", "w", encoding="utf-8") as f:
+              json.dump(store_data, f, indent=2, ensure_ascii=False)
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
