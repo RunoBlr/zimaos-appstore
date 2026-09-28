@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  teamspeak:
+    image: teamspeak:latest
+    container_name: teamspeak
+    restart: always
+    environment:
+      - TS3SERVER_LICENSE=accept
+    ports:
+      - "9987:9987/udp"    # Voice
+      - "10011:10011/tcp"  # ServerQuery
+      - "30033:30033/tcp"  # FileTransfer
+    volumes:
+      - /DATA/AppData/teamspeak:/var/ts3server
+    x-casaos:
+      envs:
+        - container: TS3SERVER_LICENSE
+          description:
+            en_us: Accept TeamSpeak EULA license (accept)
+            ru_ru: Согласие с лицензией TeamSpeak (accept)
+      ports:
+        - container: "9987"
+          description:
+            en_us: Default voice port (UDP)
+            ru_ru: Основной голосовой порт (UDP)
+        - container: "10011"
+          description:
+            en_us: ServerQuery raw port
+            ru_ru: Порт ServerQuery
+        - container: "30033"
+          description:
+            en_us: File transfer port
+            ru_ru: Порт передачи файлов
+      volumes:
+        - container: /var/ts3server
+          description:
+            en_us: TeamSpeak server database and configuration files
+            ru_ru: База данных и файлы конфигурации сервера
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: teamspeak
+  title:
+    en_us: TeamSpeak 3 Server
+    ru_ru: Сервер TeamSpeak 3
+  tagline:
+    en_us: Crystal-clear voice communication software
+    ru_ru: Проверенный временем голосовой сервер
+  description:
+    en_us: TeamSpeak is a proprietary voice-over-Internet Protocol application for audio communication between users on a chat channel, much like a telephone conference call. Check container logs on first start to retrieve your ServerAdmin privilege key.
+    ru_ru: TeamSpeak — популярная платформа для голосового общения с минимальной задержкой. При первом запуске обязательно откройте логи контейнера, чтобы скопировать токен администратора (Privilege Key).
+  developer: TeamSpeak Systems GmbH
+  author: YourName
+  icon: https://raw.githubusercontent.com/IceWhaleTech/CasaOS-AppStore/main/Apps/TeamSpeak/icon.png
+  category: Network
+  port_map: ""
